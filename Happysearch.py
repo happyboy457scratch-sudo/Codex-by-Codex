@@ -1,4 +1,4 @@
- #!/usr/bin/env python3
+#!/usr/bin/env python3
 """Happysearch: tiny search engine web app."""
 
 from __future__ import annotations
