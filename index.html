@@ -253,6 +253,14 @@
       const formEl = document.getElementById("prompt-form");
       const newChatEl = document.getElementById("new-chat");
 
+      function resolveApiUrl() {
+        if (window.location.protocol === "http:" || window.location.protocol === "https:") {
+          return `${window.location.origin}/api/ask`;
+        }
+        // Fallback for opening index.html directly via file://
+        return "http://127.0.0.1:8000/api/ask";
+      }
+
       async function askCodexLite(event) {
         event.preventDefault();
         const prompt = promptEl.value.trim();
@@ -266,20 +274,33 @@
         answerEl.textContent = "";
 
         try {
-          const response = await fetch("/api/ask", {
+          const response = await fetch(resolveApiUrl(), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ prompt })
           });
-          const payload = await response.json();
+
+          let payload = {};
+          try {
+            payload = await response.json();
+          } catch {
+            throw new Error("Server returned a non-JSON response.");
+          }
+
           if (!response.ok) {
             throw new Error(payload.error || "Request failed");
           }
-          answerEl.textContent = payload.answer;
+
+          answerEl.textContent = payload.answer || "No answer returned.";
           statusEl.textContent = "Done.";
         } catch (error) {
           statusEl.textContent = "Request failed.";
-          answerEl.textContent = `Error: ${error.message}`;
+          const message = error?.message || "Unknown error";
+          if (message.includes("expected pattern")) {
+            answerEl.textContent = "Error: API request format mismatch. Ensure you run the UI through `python3 Mini_codex.py --serve` and try again.";
+          } else {
+            answerEl.textContent = `Error: ${message}`;
+          }
         } finally {
           buttonEl.disabled = false;
         }
