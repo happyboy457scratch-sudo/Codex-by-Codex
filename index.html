@@ -1,319 +1,450 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Codex-Lite</title>
-    <style>
-      :root {
-        --bg: #0f1115;
-        --panel: #171a21;
-        --panel-2: #1d212b;
-        --text: #f3f5f7;
-        --muted: #9ca3af;
-        --border: #2a3140;
-        --accent: #10a37f;
-      }
-
-      * { box-sizing: border-box; }
-
-      body {
-        margin: 0;
-        font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        background: var(--bg);
-        color: var(--text);
-      }
-
-      .layout {
-        min-height: 100vh;
-        display: grid;
-        grid-template-columns: 260px 1fr;
-      }
-
-      .sidebar {
-        border-right: 1px solid var(--border);
-        background: #0c0e12;
-        padding: 16px;
-      }
-
-      .brand {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-weight: 600;
-        padding: 10px;
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        background: #12151d;
-      }
-
-      .dot {
-        width: 10px;
-        height: 10px;
-        border-radius: 999px;
-        background: var(--accent);
-        box-shadow: 0 0 12px rgba(16, 163, 127, 0.8);
-      }
-
-      .new-chat {
-        width: 100%;
-        margin-top: 14px;
-        background: #161b23;
-        color: var(--text);
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        padding: 11px 12px;
-        text-align: left;
-        font-size: 14px;
-      }
-
-      .nav-label {
-        color: var(--muted);
-        font-size: 12px;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        margin: 18px 8px 8px;
-      }
-
-      .nav-item {
-        padding: 10px;
-        border-radius: 8px;
-        color: #d4d9e2;
-        font-size: 14px;
-      }
-
-      .nav-item.active { background: #202635; }
-
-      .main {
-        display: grid;
-        grid-template-rows: auto 1fr auto;
-      }
-
-      .topbar {
-        border-bottom: 1px solid var(--border);
-        padding: 14px 22px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-
-      .top-title {
-        font-size: 14px;
-        color: var(--muted);
-      }
-
-      .pill {
-        font-size: 12px;
-        color: #b7f4e5;
-        border: 1px solid #24594d;
-        background: #133128;
-        border-radius: 999px;
-        padding: 5px 10px;
-      }
-
-      .chat {
-        max-width: 900px;
-        width: 100%;
-        margin: 0 auto;
-        padding: 28px 20px;
-      }
-
-      .hero {
-        text-align: center;
-        margin-top: 42px;
-        margin-bottom: 32px;
-      }
-
-      .hero h1 {
-        margin: 0;
-        font-size: clamp(28px, 4vw, 44px);
-        letter-spacing: -0.03em;
-      }
-
-      .hero p {
-        margin-top: 10px;
-        color: var(--muted);
-      }
-
-      .message {
-        border: 1px solid var(--border);
-        border-radius: 14px;
-        background: var(--panel);
-        padding: 16px;
-        margin-bottom: 14px;
-      }
-
-      .message pre {
-        margin: 0;
-        white-space: pre-wrap;
-        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-        color: #d8dfeb;
-      }
-
-      .composer-wrap {
-        border-top: 1px solid var(--border);
-        background: rgba(12,14,18,0.75);
-        backdrop-filter: blur(6px);
-        padding: 16px 20px 20px;
-      }
-
-      .composer {
-        max-width: 900px;
-        margin: 0 auto;
-        border: 1px solid var(--border);
-        border-radius: 14px;
-        background: var(--panel-2);
-        padding: 10px;
-      }
-
-      textarea {
-        width: 100%;
-        border: 0;
-        resize: vertical;
-        min-height: 90px;
-        max-height: 230px;
-        background: transparent;
-        color: var(--text);
-        font-size: 16px;
-        outline: none;
-        font-family: inherit;
-      }
-
-      .composer-actions {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 8px;
-      }
-
-      .status {
-        color: var(--muted);
-        font-size: 13px;
-      }
-
-      .send {
-        border: 1px solid #1f8a70;
-        background: var(--accent);
-        color: #04241c;
-        font-weight: 700;
-        border-radius: 9px;
-        padding: 8px 14px;
-      }
-
-      .send:disabled { opacity: 0.7; }
-
-      @media (max-width: 900px) {
-        .layout { grid-template-columns: 1fr; }
-        .sidebar { display: none; }
-      }
-    </style>
-  </head>
-  <body>
-    <div class="layout">
-      <aside class="sidebar">
-        <div class="brand"><span class="dot"></span>Codex-Lite</div>
-        <button class="new-chat" id="new-chat">+ New coding chat</button>
-        <div class="nav-label">Recent</div>
-        <div class="nav-item active">Build a Python CLI todo app</div>
-        <div class="nav-item">Refactor React data table</div>
-        <div class="nav-item">Write tests for auth middleware</div>
-      </aside>
-
-      <main class="main">
-        <header class="topbar">
-          <div class="top-title">codex-like coding workspace</div>
-          <div class="pill">offline-ready</div>
-        </header>
-
-        <section class="chat" id="chat-log">
-          <div class="hero">
-            <h1>What should we code?</h1>
-            <p>Ask for features, refactors, tests, or full project scaffolds.</p>
-          </div>
-          <article class="message"><pre id="answer">Your coding answer will appear here.</pre></article>
-        </section>
-
-        <footer class="composer-wrap">
-          <form class="composer" id="prompt-form">
-            <textarea id="prompt" placeholder="Ask Codex-Lite to build something..."></textarea>
-            <div class="composer-actions">
-              <span class="status" id="status">Ready.</span>
-              <button class="send" id="ask-button" type="submit">Generate</button>
-            </div>
-          </form>
-        </footer>
-      </main>
-    </div>
-
-    <script>
-      const promptEl = document.getElementById("prompt");
-      const buttonEl = document.getElementById("ask-button");
-      const statusEl = document.getElementById("status");
-      const answerEl = document.getElementById("answer");
-      const formEl = document.getElementById("prompt-form");
-      const newChatEl = document.getElementById("new-chat");
-
-      function resolveApiUrl() {
-        if (window.location.protocol === "http:" || window.location.protocol === "https:") {
-          return `${window.location.origin}/api/ask`;
-        }
-        // Fallback for opening index.html directly via file://
-        return "http://127.0.0.1:8000/api/ask";
-      }
-
-      async function askCodexLite(event) {
-        event.preventDefault();
-        const prompt = promptEl.value.trim();
-        if (!prompt) {
-          statusEl.textContent = "Please enter a coding prompt.";
-          return;
-        }
-
-        buttonEl.disabled = true;
-        statusEl.textContent = "Thinking...";
-        answerEl.textContent = "";
-
-        try {
-          const response = await fetch(resolveApiUrl(), {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ prompt })
-          });
-
-          let payload = {};
-          try {
-            payload = await response.json();
-          } catch {
-            throw new Error("Server returned a non-JSON response.");
-          }
-
-          if (!response.ok) {
-            throw new Error(payload.error || "Request failed");
-          }
-
-          answerEl.textContent = payload.answer || "No answer returned.";
-          statusEl.textContent = "Done.";
-        } catch (error) {
-          statusEl.textContent = "Request failed.";
-          const message = error?.message || "Unknown error";
-          if (message.includes("expected pattern")) {
-            answerEl.textContent = "Error: API request format mismatch. Ensure you run the UI through `python3 Mini_codex.py --serve` and try again.";
-          } else {
-            answerEl.textContent = `Error: ${message}`;
-          }
-        } finally {
-          buttonEl.disabled = false;
-        }
-      }
-
-      function resetChat() {
-        promptEl.value = "";
-        answerEl.textContent = "Your coding answer will appear here.";
-        statusEl.textContent = "Ready.";
-      }
-
-      formEl.addEventListener("submit", askCodexLite);
-      newChatEl.addEventListener("click", resetChat);
-    </script>
-  </body>
-</html>
+ (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
+diff --git a/index.html b/index.html
+index c30593e13c6b6ba6a778a0b46248abe963effdb6..268d5344d069a02aa17ee1a4cefa9daf7c3b9d20 100644
+--- a/index.html
++++ b/index.html
+@@ -1,298 +1,223 @@
+ <!doctype html>
+ <html lang="en">
+   <head>
+     <meta charset="utf-8" />
+     <meta name="viewport" content="width=device-width, initial-scale=1" />
+-    <title>Codex-Lite</title>
++    <title>Happysearch</title>
+     <style>
+       :root {
+-        --bg: #0f1115;
+-        --panel: #171a21;
+-        --panel-2: #1d212b;
+-        --text: #f3f5f7;
+-        --muted: #9ca3af;
+-        --border: #2a3140;
+-        --accent: #10a37f;
++        --bg: #fff9f0;
++        --text: #2a1f10;
++        --muted: #755c3a;
++        --card: #ffffff;
++        --border: #f2d9b3;
++        --accent: #ff9f1c;
++        --accent-2: #ffbf69;
+       }
+ 
+       * { box-sizing: border-box; }
+ 
+       body {
+         margin: 0;
+         font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+-        background: var(--bg);
+         color: var(--text);
+-      }
+-
+-      .layout {
++        background: radial-gradient(circle at top, #fff4e2 0%, var(--bg) 50%);
+         min-height: 100vh;
+-        display: grid;
+-        grid-template-columns: 260px 1fr;
+       }
+ 
+-      .sidebar {
+-        border-right: 1px solid var(--border);
+-        background: #0c0e12;
+-        padding: 16px;
++      .wrap {
++        max-width: 960px;
++        margin: 0 auto;
++        padding: 28px 20px 48px;
+       }
+ 
+       .brand {
+-        display: flex;
++        display: inline-flex;
+         align-items: center;
+         gap: 10px;
+-        font-weight: 600;
+-        padding: 10px;
+-        border: 1px solid var(--border);
+-        border-radius: 10px;
+-        background: #12151d;
+-      }
+-
+-      .dot {
+-        width: 10px;
+-        height: 10px;
+-        border-radius: 999px;
+-        background: var(--accent);
+-        box-shadow: 0 0 12px rgba(16, 163, 127, 0.8);
+-      }
+-
+-      .new-chat {
+-        width: 100%;
+-        margin-top: 14px;
+-        background: #161b23;
+-        color: var(--text);
++        background: #fff;
+         border: 1px solid var(--border);
+-        border-radius: 10px;
+-        padding: 11px 12px;
+-        text-align: left;
+-        font-size: 14px;
+-      }
+-
+-      .nav-label {
+-        color: var(--muted);
+-        font-size: 12px;
+-        text-transform: uppercase;
+-        letter-spacing: 0.08em;
+-        margin: 18px 8px 8px;
+-      }
+-
+-      .nav-item {
+-        padding: 10px;
+-        border-radius: 8px;
+-        color: #d4d9e2;
+-        font-size: 14px;
+-      }
+-
+-      .nav-item.active { background: #202635; }
+-
+-      .main {
+-        display: grid;
+-        grid-template-rows: auto 1fr auto;
+-      }
+-
+-      .topbar {
+-        border-bottom: 1px solid var(--border);
+-        padding: 14px 22px;
+-        display: flex;
+-        justify-content: space-between;
+-        align-items: center;
+-      }
+-
+-      .top-title {
+-        font-size: 14px;
+-        color: var(--muted);
+-      }
+-
+-      .pill {
+-        font-size: 12px;
+-        color: #b7f4e5;
+-        border: 1px solid #24594d;
+-        background: #133128;
+         border-radius: 999px;
+-        padding: 5px 10px;
++        padding: 8px 14px;
++        font-weight: 700;
+       }
+ 
+-      .chat {
+-        max-width: 900px;
+-        width: 100%;
+-        margin: 0 auto;
+-        padding: 28px 20px;
++      .logo {
++        width: 18px;
++        height: 18px;
++        border-radius: 50%;
++        background: linear-gradient(135deg, var(--accent), #ff5e5b);
+       }
+ 
+       .hero {
+         text-align: center;
+-        margin-top: 42px;
+-        margin-bottom: 32px;
++        margin: 42px 0 28px;
+       }
+ 
+-      .hero h1 {
++      h1 {
+         margin: 0;
+-        font-size: clamp(28px, 4vw, 44px);
++        font-size: clamp(36px, 5vw, 62px);
+         letter-spacing: -0.03em;
+       }
+ 
+       .hero p {
+         margin-top: 10px;
+         color: var(--muted);
+       }
+ 
+-      .message {
++      .search-box {
++        background: var(--card);
+         border: 1px solid var(--border);
+-        border-radius: 14px;
+-        background: var(--panel);
+-        padding: 16px;
+-        margin-bottom: 14px;
++        border-radius: 16px;
++        padding: 12px;
++        box-shadow: 0 10px 20px rgba(255, 159, 28, 0.1);
++        display: flex;
++        gap: 10px;
+       }
+ 
+-      .message pre {
+-        margin: 0;
+-        white-space: pre-wrap;
+-        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+-        color: #d8dfeb;
++      input {
++        flex: 1;
++        border: 0;
++        font-size: 18px;
++        padding: 10px;
++        outline: none;
++        color: var(--text);
+       }
+ 
+-      .composer-wrap {
+-        border-top: 1px solid var(--border);
+-        background: rgba(12,14,18,0.75);
+-        backdrop-filter: blur(6px);
+-        padding: 16px 20px 20px;
++      button {
++        border: 0;
++        border-radius: 12px;
++        background: linear-gradient(135deg, var(--accent), var(--accent-2));
++        color: #3f2500;
++        font-weight: 700;
++        padding: 0 20px;
++        cursor: pointer;
+       }
+ 
+-      .composer {
+-        max-width: 900px;
+-        margin: 0 auto;
++      .meta {
++        color: var(--muted);
++        margin: 14px 2px;
++        font-size: 14px;
++      }
++
++      .results {
++        display: grid;
++        gap: 12px;
++      }
++
++      .result {
++        background: var(--card);
+         border: 1px solid var(--border);
+         border-radius: 14px;
+-        background: var(--panel-2);
+-        padding: 10px;
++        padding: 14px;
+       }
+ 
+-      textarea {
+-        width: 100%;
+-        border: 0;
+-        resize: vertical;
+-        min-height: 90px;
+-        max-height: 230px;
+-        background: transparent;
+-        color: var(--text);
+-        font-size: 16px;
+-        outline: none;
+-        font-family: inherit;
++      .result a {
++        color: #9b4d00;
++        text-decoration: none;
++        font-weight: 600;
+       }
+ 
+-      .composer-actions {
+-        display: flex;
+-        justify-content: space-between;
+-        align-items: center;
+-        margin-top: 8px;
++      .result a:hover {
++        text-decoration: underline;
+       }
+ 
+-      .status {
+-        color: var(--muted);
+-        font-size: 13px;
++      .result p {
++        margin: 8px 0;
++        line-height: 1.5;
+       }
+ 
+-      .send {
+-        border: 1px solid #1f8a70;
+-        background: var(--accent);
+-        color: #04241c;
+-        font-weight: 700;
+-        border-radius: 9px;
+-        padding: 8px 14px;
++      .url {
++        color: var(--muted);
++        font-size: 13px;
++        word-break: break-all;
+       }
+ 
+-      .send:disabled { opacity: 0.7; }
+-
+-      @media (max-width: 900px) {
+-        .layout { grid-template-columns: 1fr; }
+-        .sidebar { display: none; }
++      .empty {
++        text-align: center;
++        color: var(--muted);
++        margin-top: 40px;
+       }
+     </style>
+   </head>
+   <body>
+-    <div class="layout">
+-      <aside class="sidebar">
+-        <div class="brand"><span class="dot"></span>Codex-Lite</div>
+-        <button class="new-chat" id="new-chat">+ New coding chat</button>
+-        <div class="nav-label">Recent</div>
+-        <div class="nav-item active">Build a Python CLI todo app</div>
+-        <div class="nav-item">Refactor React data table</div>
+-        <div class="nav-item">Write tests for auth middleware</div>
+-      </aside>
+-
+-      <main class="main">
+-        <header class="topbar">
+-          <div class="top-title">codex-like coding workspace</div>
+-          <div class="pill">offline-ready</div>
+-        </header>
+-
+-        <section class="chat" id="chat-log">
+-          <div class="hero">
+-            <h1>What should we code?</h1>
+-            <p>Ask for features, refactors, tests, or full project scaffolds.</p>
+-          </div>
+-          <article class="message"><pre id="answer">Your coding answer will appear here.</pre></article>
+-        </section>
+-
+-        <footer class="composer-wrap">
+-          <form class="composer" id="prompt-form">
+-            <textarea id="prompt" placeholder="Ask Codex-Lite to build something..."></textarea>
+-            <div class="composer-actions">
+-              <span class="status" id="status">Ready.</span>
+-              <button class="send" id="ask-button" type="submit">Generate</button>
+-            </div>
+-          </form>
+-        </footer>
+-      </main>
+-    </div>
++    <main class="wrap">
++      <div class="brand"><span class="logo"></span> Happysearch</div>
++      <section class="hero">
++        <h1>Happysearch</h1>
++        <p>Search with a smile. Instant answers from Wikipedia plus web shortcuts.</p>
++      </section>
++      <form id="searchForm" class="search-box">
++        <input id="query" name="q" placeholder="Search Happysearch..." autocomplete="off" required />
++        <button type="submit">Search</button>
++      </form>
++      <div id="meta" class="meta"></div>
++      <section id="results" class="results"></section>
++      <p id="empty" class="empty">Try searching for something fun like “black holes” or “jazz history”.</p>
++    </main>
+ 
+     <script>
+-      const promptEl = document.getElementById("prompt");
+-      const buttonEl = document.getElementById("ask-button");
+-      const statusEl = document.getElementById("status");
+-      const answerEl = document.getElementById("answer");
+-      const formEl = document.getElementById("prompt-form");
+-      const newChatEl = document.getElementById("new-chat");
+-
+-      async function askCodexLite(event) {
+-        event.preventDefault();
+-        const prompt = promptEl.value.trim();
+-        if (!prompt) {
+-          statusEl.textContent = "Please enter a coding prompt.";
++      const form = document.getElementById('searchForm');
++      const queryInput = document.getElementById('query');
++      const meta = document.getElementById('meta');
++      const results = document.getElementById('results');
++      const empty = document.getElementById('empty');
++
++      function escapeHtml(text) {
++        const div = document.createElement('div');
++        div.textContent = text;
++        return div.innerHTML;
++      }
++
++      function renderResults(payload, query) {
++        results.innerHTML = '';
++        const total = payload.results.length;
++        meta.textContent = total
++          ? `${total} result${total === 1 ? '' : 's'} for "${query}" in ${payload.elapsed_ms} ms`
++          : `No results for "${query}"`;
++
++        if (!total) {
++          empty.style.display = 'block';
+           return;
+         }
+ 
+-        buttonEl.disabled = true;
+-        statusEl.textContent = "Thinking...";
+-        answerEl.textContent = "";
++        empty.style.display = 'none';
++        payload.results.forEach((item) => {
++          const article = document.createElement('article');
++          article.className = 'result';
++          article.innerHTML = `
++            <a href="${escapeHtml(item.url)}" target="_blank" rel="noreferrer">${escapeHtml(item.title)}</a>
++            <p>${escapeHtml(item.snippet || 'No summary available.')}</p>
++            <div class="url">${escapeHtml(item.url)}</div>
++          `;
++          results.appendChild(article);
++        });
++      }
++
++      form.addEventListener('submit', async (event) => {
++        event.preventDefault();
++        const q = queryInput.value.trim();
++        if (!q) return;
++
++        meta.textContent = 'Searching...';
++        empty.style.display = 'none';
++        results.innerHTML = '';
+ 
+         try {
+-          const response = await fetch("/api/ask", {
+-            method: "POST",
+-            headers: { "Content-Type": "application/json" },
+-            body: JSON.stringify({ prompt })
+-          });
++          const response = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+           const payload = await response.json();
++
+           if (!response.ok) {
+-            throw new Error(payload.error || "Request failed");
++            throw new Error(payload.error || 'Search failed.');
+           }
+-          answerEl.textContent = payload.answer;
+-          statusEl.textContent = "Done.";
++
++          renderResults(payload, q);
+         } catch (error) {
+-          statusEl.textContent = "Request failed.";
+-          answerEl.textContent = `Error: ${error.message}`;
+-        } finally {
+-          buttonEl.disabled = false;
++          meta.textContent = '';
++          empty.style.display = 'block';
++          empty.textContent = error.message;
+         }
+-      }
+-
+-      function resetChat() {
+-        promptEl.value = "";
+-        answerEl.textContent = "Your coding answer will appear here.";
+-        statusEl.textContent = "Ready.";
+-      }
+-
+-      formEl.addEventListener("submit", askCodexLite);
+-      newChatEl.addEventListener("click", resetChat);
++      });
+     </script>
+   </body>
+ </html>
+ 
+EOF
+)
