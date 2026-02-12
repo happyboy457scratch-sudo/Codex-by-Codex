@@ -35,6 +35,11 @@ SYSTEM_PROMPT = textwrap.dedent(
 ).strip()
 
 WEB_DIR = Path(__file__).resolve().parent / "web"
+TEMPLATE_FILES = {
+    "Mini_codex.py": "Mini_codex.py",
+    "README.md": "README.md",
+    "web/index.html": "index.html",
+}
 
 
 def _get_openai_client() -> object | None:
@@ -244,7 +249,27 @@ def parse_args(argv: List[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--serve", action="store_true", help="Run web UI server")
     parser.add_argument("--host", default="127.0.0.1", help="Web server host")
     parser.add_argument("--port", type=int, default=8000, help="Web server port")
+    parser.add_argument(
+        "--create-yourself",
+        metavar="TARGET_DIR",
+        help="Scaffold a standalone Codex-Lite copy into TARGET_DIR",
+    )
     return parser.parse_args(argv)
+
+
+def create_yourself(target_dir: str) -> Path:
+    """Scaffold a standalone Codex-Lite copy in target_dir."""
+    destination = Path(target_dir).expanduser().resolve()
+    destination.mkdir(parents=True, exist_ok=True)
+
+    project_root = Path(__file__).resolve().parent
+    for relative_dest, source_name in TEMPLATE_FILES.items():
+        source = project_root / source_name
+        target = destination / relative_dest
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(source.read_bytes())
+
+    return destination
 
 
 def run_server(assistant: CodexLite, host: str, port: int) -> None:
@@ -259,6 +284,12 @@ def run_server(assistant: CodexLite, host: str, port: int) -> None:
 
 def main() -> None:
     args = parse_args()
+
+    if args.create_yourself:
+        destination = create_yourself(args.create_yourself)
+        print(f"Created Codex-Lite scaffold at: {destination}")
+        return
+
     assistant = CodexLite(
         LiteConfig(
             model=args.model,
