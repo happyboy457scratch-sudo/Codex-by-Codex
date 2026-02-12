@@ -1,10 +1,3 @@
- (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
-diff --git a/Mini_codex.py b/Mini_codex.py
-index d8235f9af85eb30b38f78feebc8c2192efcde7ec..b838b12417e5255a2ab967126c9b38c924998883 100644
---- a/Mini_codex.py
-+++ b/Mini_codex.py
-@@ -1,319 +1,163 @@
- #!/usr/bin/env python3
 -"""Codex-Lite: compact coding assistant with CLI and lightweight web UI."""
 +"""Happysearch: tiny search engine web app."""
  
@@ -410,6 +403,3 @@ index d8235f9af85eb30b38f78feebc8c2192efcde7ec..b838b12417e5255a2ab967126c9b38c9
  
  if __name__ == "__main__":
      main()
- 
-EOF
-)
