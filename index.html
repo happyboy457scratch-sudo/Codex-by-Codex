@@ -1,260 +1,475 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Happysearch</title>
-    <style>
-      :root {
-        --bg: #f5faff;
-        --text: #1f2937;
-        --muted: #64748b;
-        --line: #d7e9ff;
-        --brand: #7cc4ff;
-        --brand-dark: #54afff;
-        --btn-bg: #eef6ff;
-      }
-
-      * { box-sizing: border-box; }
-
-      body {
-        margin: 0;
-        font-family: Arial, Helvetica, sans-serif;
-        color: var(--text);
-        background: var(--bg);
-      }
-
-      .page {
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-      }
-
-      .center {
-        flex: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 24px;
-      }
-
-      .search-shell {
-        width: min(760px, 100%);
-      }
-
-      .logo {
-        text-align: center;
-        font-size: clamp(56px, 11vw, 94px);
-        font-weight: 700;
-        letter-spacing: -0.02em;
-        color: var(--brand);
-        margin-bottom: 22px;
-        user-select: none;
-      }
-
-      .logo span { color: var(--brand-dark); }
-
-      .search-wrap {
-        border: 1px solid var(--line);
-        background: #fff;
-        border-radius: 999px;
-        padding: 6px 8px 6px 18px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        box-shadow: 0 2px 10px rgba(66, 153, 225, 0.08);
-      }
-
-      .search-wrap:focus-within {
-        border-color: var(--brand);
-        box-shadow: 0 4px 16px rgba(66, 153, 225, 0.22);
-      }
-
-      input[type="search"] {
-        flex: 1;
-        border: 0;
-        outline: none;
-        font-size: 18px;
-        padding: 10px 4px;
-        color: var(--text);
-      }
-
-      .search-icon {
-        color: var(--muted);
-        font-size: 15px;
-      }
-
-      .actions {
-        margin-top: 20px;
-        display: flex;
-        justify-content: center;
-        gap: 12px;
-        flex-wrap: wrap;
-      }
-
-      button {
-        border: 1px solid var(--line);
-        background: var(--btn-bg);
-        color: #2563eb;
-        border-radius: 8px;
-        padding: 10px 16px;
-        font-size: 14px;
-        cursor: pointer;
-      }
-
-      button:hover {
-        border-color: #b5d9ff;
-        background: #e6f2ff;
-      }
-
-      .results {
-        width: min(860px, 100%);
-        margin: 30px auto 40px;
-        padding: 0 24px;
-        display: none;
-      }
-
-      .meta {
-        color: var(--muted);
-        margin-bottom: 14px;
-      }
-
-      .result {
-        background: #fff;
-        border: 1px solid #e4f0ff;
-        border-radius: 12px;
-        padding: 14px 16px;
-        margin-bottom: 10px;
-      }
-
-      .result a {
-        color: #1d4ed8;
-        font-size: 20px;
-        text-decoration: none;
-      }
-
-      .result a:hover { text-decoration: underline; }
-
-      .result p {
-        margin: 7px 0;
-        line-height: 1.45;
-      }
-
-      .url {
-        color: #0f766e;
-        font-size: 13px;
-        word-break: break-word;
-      }
-
-      footer {
-        text-align: center;
-        color: var(--muted);
-        font-size: 12px;
-        padding: 16px;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="page">
-      <main class="center">
-        <section class="search-shell">
-          <div class="logo">Happy<span>search</span></div>
-          <form id="searchForm">
-            <div class="search-wrap">
-              <span class="search-icon">🔎</span>
-              <input id="query" type="search" name="q" placeholder="Search Happysearch" autocomplete="off" required />
-            </div>
-            <div class="actions">
-              <button type="submit">Happy Search</button>
-              <button id="luckyBtn" type="button">I'm Feeling Happy</button>
-            </div>
-          </form>
-        </section>
-      </main>
-
-      <section id="results" class="results">
-        <div id="meta" class="meta"></div>
-        <div id="list"></div>
-      </section>
-
-      <footer>Happysearch • the light-blue friendly search page</footer>
-    </div>
-
-    <script>
-      const form = document.getElementById('searchForm');
-      const queryInput = document.getElementById('query');
-      const luckyBtn = document.getElementById('luckyBtn');
-      const results = document.getElementById('results');
-      const meta = document.getElementById('meta');
-      const list = document.getElementById('list');
-
-      function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-      }
-
-      function renderResults(payload) {
-        list.innerHTML = '';
-        results.style.display = 'block';
-
-        const total = payload.results.length;
-        meta.textContent = `${total} result${total === 1 ? '' : 's'} in ${payload.elapsed_ms} ms`;
-
-        if (!total) {
-          list.innerHTML = '<div class="result"><p>No results found.</p></div>';
-          return;
-        }
-
-        payload.results.forEach((item) => {
-          const article = document.createElement('article');
-          article.className = 'result';
-          article.innerHTML = `
-            <a href="${escapeHtml(item.url)}" target="_blank" rel="noreferrer">${escapeHtml(item.title)}</a>
-            <p>${escapeHtml(item.snippet || 'No description available.')}</p>
-            <div class="url">${escapeHtml(item.url)}</div>
-          `;
-          list.appendChild(article);
-        });
-      }
-
-      async function runSearch() {
-        const q = queryInput.value.trim();
-        if (!q) return null;
-
-        meta.textContent = 'Searching...';
-        list.innerHTML = '';
-        results.style.display = 'block';
-
-        const response = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
-        const payload = await response.json();
-        if (!response.ok) {
-          throw new Error(payload.error || 'Search failed.');
-        }
-        renderResults(payload);
-        return payload;
-      }
-
-      form.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        try {
-          await runSearch();
-        } catch (error) {
-          meta.textContent = error.message;
-          list.innerHTML = '';
-        }
-      });
-
-      luckyBtn.addEventListener('click', async () => {
-        try {
-          const payload = await runSearch();
-          if (payload && payload.results.length > 0) {
-            window.open(payload.results[0].url, '_blank', 'noopener,noreferrer');
-          }
-        } catch (error) {
-          meta.textContent = error.message;
-        }
-      });
-    </script>
-  </body>
-</html>
+ <!doctype html>
+ <html lang="en">
+   <head>
+     <meta charset="utf-8" />
+     <meta name="viewport" content="width=device-width, initial-scale=1" />
+-    <title>Codex-Lite</title>
++    <title>Happysearch</title>
+     <style>
+       :root {
+-        --bg: #0f1115;
+-        --panel: #171a21;
+-        --panel-2: #1d212b;
+-        --text: #f3f5f7;
+-        --muted: #9ca3af;
+-        --border: #2a3140;
+-        --accent: #10a37f;
++        --bg: #f5faff;
++        --text: #1f2937;
++        --muted: #64748b;
++        --line: #d7e9ff;
++        --brand: #7cc4ff;
++        --brand-dark: #54afff;
++        --btn-bg: #eef6ff;
+       }
+ 
+       * { box-sizing: border-box; }
+ 
+       body {
+         margin: 0;
+-        font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+-        background: var(--bg);
++        font-family: Arial, Helvetica, sans-serif;
+         color: var(--text);
++        background: var(--bg);
+       }
+ 
+-      .layout {
++      .page {
+         min-height: 100vh;
+-        display: grid;
+-        grid-template-columns: 260px 1fr;
+-      }
+-
+-      .sidebar {
+-        border-right: 1px solid var(--border);
+-        background: #0c0e12;
+-        padding: 16px;
++        display: flex;
++        flex-direction: column;
+       }
+ 
+-      .brand {
++      .center {
++        flex: 1;
+         display: flex;
+         align-items: center;
+-        gap: 10px;
+-        font-weight: 600;
+-        padding: 10px;
+-        border: 1px solid var(--border);
+-        border-radius: 10px;
+-        background: #12151d;
++        justify-content: center;
++        padding: 24px;
+       }
+ 
+-      .dot {
+-        width: 10px;
+-        height: 10px;
+-        border-radius: 999px;
+-        background: var(--accent);
+-        box-shadow: 0 0 12px rgba(16, 163, 127, 0.8);
++      .search-shell {
++        width: min(760px, 100%);
+       }
+ 
+-      .new-chat {
+-        width: 100%;
+-        margin-top: 14px;
+-        background: #161b23;
+-        color: var(--text);
+-        border: 1px solid var(--border);
+-        border-radius: 10px;
+-        padding: 11px 12px;
+-        text-align: left;
+-        font-size: 14px;
++      .logo {
++        text-align: center;
++        font-size: clamp(56px, 11vw, 94px);
++        font-weight: 700;
++        letter-spacing: -0.02em;
++        color: var(--brand);
++        margin-bottom: 22px;
++        user-select: none;
+       }
+ 
+-      .nav-label {
+-        color: var(--muted);
+-        font-size: 12px;
+-        text-transform: uppercase;
+-        letter-spacing: 0.08em;
+-        margin: 18px 8px 8px;
+-      }
++      .logo span { color: var(--brand-dark); }
+ 
+-      .nav-item {
+-        padding: 10px;
+-        border-radius: 8px;
+-        color: #d4d9e2;
+-        font-size: 14px;
++      .search-wrap {
++        border: 1px solid var(--line);
++        background: #fff;
++        border-radius: 999px;
++        padding: 6px 8px 6px 18px;
++        display: flex;
++        align-items: center;
++        gap: 10px;
++        box-shadow: 0 2px 10px rgba(66, 153, 225, 0.08);
+       }
+ 
+-      .nav-item.active { background: #202635; }
+-
+-      .main {
+-        display: grid;
+-        grid-template-rows: auto 1fr auto;
++      .search-wrap:focus-within {
++        border-color: var(--brand);
++        box-shadow: 0 4px 16px rgba(66, 153, 225, 0.22);
+       }
+ 
+-      .topbar {
+-        border-bottom: 1px solid var(--border);
+-        padding: 14px 22px;
+-        display: flex;
+-        justify-content: space-between;
+-        align-items: center;
++      input[type="search"] {
++        flex: 1;
++        border: 0;
++        outline: none;
++        font-size: 18px;
++        padding: 10px 4px;
++        color: var(--text);
+       }
+ 
+-      .top-title {
+-        font-size: 14px;
++      .search-icon {
+         color: var(--muted);
++        font-size: 15px;
+       }
+ 
+-      .pill {
+-        font-size: 12px;
+-        color: #b7f4e5;
+-        border: 1px solid #24594d;
+-        background: #133128;
+-        border-radius: 999px;
+-        padding: 5px 10px;
++      .actions {
++        margin-top: 20px;
++        display: flex;
++        justify-content: center;
++        gap: 12px;
++        flex-wrap: wrap;
+       }
+ 
+-      .chat {
+-        max-width: 900px;
+-        width: 100%;
+-        margin: 0 auto;
+-        padding: 28px 20px;
++      button {
++        border: 1px solid var(--line);
++        background: var(--btn-bg);
++        color: #2563eb;
++        border-radius: 8px;
++        padding: 10px 16px;
++        font-size: 14px;
++        cursor: pointer;
+       }
+ 
+-      .hero {
+-        text-align: center;
+-        margin-top: 42px;
+-        margin-bottom: 32px;
++      button:hover {
++        border-color: #b5d9ff;
++        background: #e6f2ff;
+       }
+ 
+-      .hero h1 {
+-        margin: 0;
+-        font-size: clamp(28px, 4vw, 44px);
+-        letter-spacing: -0.03em;
++      .results {
++        width: min(860px, 100%);
++        margin: 30px auto 40px;
++        padding: 0 24px;
++        display: none;
+       }
+ 
+-      .hero p {
+-        margin-top: 10px;
++      .meta {
+         color: var(--muted);
+-      }
+-
+-      .message {
+-        border: 1px solid var(--border);
+-        border-radius: 14px;
+-        background: var(--panel);
+-        padding: 16px;
+         margin-bottom: 14px;
+       }
+ 
+-      .message pre {
+-        margin: 0;
+-        white-space: pre-wrap;
+-        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+-        color: #d8dfeb;
+-      }
+-
+-      .composer-wrap {
+-        border-top: 1px solid var(--border);
+-        background: rgba(12,14,18,0.75);
+-        backdrop-filter: blur(6px);
+-        padding: 16px 20px 20px;
++      .result {
++        background: #fff;
++        border: 1px solid #e4f0ff;
++        border-radius: 12px;
++        padding: 14px 16px;
++        margin-bottom: 10px;
+       }
+ 
+-      .composer {
+-        max-width: 900px;
+-        margin: 0 auto;
+-        border: 1px solid var(--border);
+-        border-radius: 14px;
+-        background: var(--panel-2);
+-        padding: 10px;
++      .result a {
++        color: #1d4ed8;
++        font-size: 20px;
++        text-decoration: none;
+       }
+ 
+-      textarea {
+-        width: 100%;
+-        border: 0;
+-        resize: vertical;
+-        min-height: 90px;
+-        max-height: 230px;
+-        background: transparent;
+-        color: var(--text);
+-        font-size: 16px;
+-        outline: none;
+-        font-family: inherit;
+-      }
++      .result a:hover { text-decoration: underline; }
+ 
+-      .composer-actions {
+-        display: flex;
+-        justify-content: space-between;
+-        align-items: center;
+-        margin-top: 8px;
++      .result p {
++        margin: 7px 0;
++        line-height: 1.45;
+       }
+ 
+-      .status {
+-        color: var(--muted);
++      .url {
++        color: #0f766e;
+         font-size: 13px;
++        word-break: break-word;
+       }
+ 
+-      .send {
+-        border: 1px solid #1f8a70;
+-        background: var(--accent);
+-        color: #04241c;
+-        font-weight: 700;
+-        border-radius: 9px;
+-        padding: 8px 14px;
+-      }
+-
+-      .send:disabled { opacity: 0.7; }
+-
+-      @media (max-width: 900px) {
+-        .layout { grid-template-columns: 1fr; }
+-        .sidebar { display: none; }
++      footer {
++        text-align: center;
++        color: var(--muted);
++        font-size: 12px;
++        padding: 16px;
+       }
+     </style>
+   </head>
+   <body>
+-    <div class="layout">
+-      <aside class="sidebar">
+-        <div class="brand"><span class="dot"></span>Codex-Lite</div>
+-        <button class="new-chat" id="new-chat">+ New coding chat</button>
+-        <div class="nav-label">Recent</div>
+-        <div class="nav-item active">Build a Python CLI todo app</div>
+-        <div class="nav-item">Refactor React data table</div>
+-        <div class="nav-item">Write tests for auth middleware</div>
+-      </aside>
+-
+-      <main class="main">
+-        <header class="topbar">
+-          <div class="top-title">codex-like coding workspace</div>
+-          <div class="pill">offline-ready</div>
+-        </header>
+-
+-        <section class="chat" id="chat-log">
+-          <div class="hero">
+-            <h1>What should we code?</h1>
+-            <p>Ask for features, refactors, tests, or full project scaffolds.</p>
+-          </div>
+-          <article class="message"><pre id="answer">Your coding answer will appear here.</pre></article>
+-        </section>
+-
+-        <footer class="composer-wrap">
+-          <form class="composer" id="prompt-form">
+-            <textarea id="prompt" placeholder="Ask Codex-Lite to build something..."></textarea>
+-            <div class="composer-actions">
+-              <span class="status" id="status">Ready.</span>
+-              <button class="send" id="ask-button" type="submit">Generate</button>
++    <div class="page">
++      <main class="center">
++        <section class="search-shell">
++          <div class="logo">Happy<span>search</span></div>
++          <form id="searchForm">
++            <div class="search-wrap">
++              <span class="search-icon">🔎</span>
++              <input id="query" type="search" name="q" placeholder="Search Happysearch" autocomplete="off" required />
++            </div>
++            <div class="actions">
++              <button type="submit">Happy Search</button>
+             </div>
+           </form>
+-        </footer>
++        </section>
+       </main>
++
++      <section id="results" class="results">
++        <div id="meta" class="meta"></div>
++        <div id="list"></div>
++      </section>
++
++      <footer>Happysearch • the light-blue friendly search page</footer>
+     </div>
+ 
+     <script>
+-      const promptEl = document.getElementById("prompt");
+-      const buttonEl = document.getElementById("ask-button");
+-      const statusEl = document.getElementById("status");
+-      const answerEl = document.getElementById("answer");
+-      const formEl = document.getElementById("prompt-form");
+-      const newChatEl = document.getElementById("new-chat");
+-
+-      async function askCodexLite(event) {
+-        event.preventDefault();
+-        const prompt = promptEl.value.trim();
+-        if (!prompt) {
+-          statusEl.textContent = "Please enter a coding prompt.";
++      const form = document.getElementById('searchForm');
++      const queryInput = document.getElementById('query');
++      const results = document.getElementById('results');
++      const meta = document.getElementById('meta');
++      const list = document.getElementById('list');
++
++      function escapeHtml(text) {
++        const div = document.createElement('div');
++        div.textContent = text;
++        return div.innerHTML;
++      }
++
++      function renderResults(payload) {
++        list.innerHTML = '';
++        results.style.display = 'block';
++
++        const total = payload.results.length;
++        meta.textContent = `${total} result${total === 1 ? '' : 's'} in ${payload.elapsed_ms} ms`;
++
++        if (!total) {
++          list.innerHTML = '<div class="result"><p>No results found.</p></div>';
+           return;
+         }
+ 
+-        buttonEl.disabled = true;
+-        statusEl.textContent = "Thinking...";
+-        answerEl.textContent = "";
+-
++        payload.results.forEach((item) => {
++          const article = document.createElement('article');
++          article.className = 'result';
++          article.innerHTML = `
++            <a href="${escapeHtml(item.url)}" target="_blank" rel="noreferrer">${escapeHtml(item.title)}</a>
++            <p>${escapeHtml(item.snippet || 'No description available.')}</p>
++            <div class="url">${escapeHtml(item.url)}</div>
++          `;
++          list.appendChild(article);
++        });
++      }
++
++      async function runSearch() {
++        const q = queryInput.value.trim();
++        if (!q) return null;
++
++        meta.textContent = 'Searching...';
++        list.innerHTML = '';
++        results.style.display = 'block';
++
++        const response = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
++        const raw = await response.text();
++        let payload;
+         try {
+-          const response = await fetch("/api/ask", {
+-            method: "POST",
+-            headers: { "Content-Type": "application/json" },
+-            body: JSON.stringify({ prompt })
+-          });
+-          const payload = await response.json();
+-          if (!response.ok) {
+-            throw new Error(payload.error || "Request failed");
+-          }
+-          answerEl.textContent = payload.answer;
+-          statusEl.textContent = "Done.";
+-        } catch (error) {
+-          statusEl.textContent = "Request failed.";
+-          answerEl.textContent = `Error: ${error.message}`;
+-        } finally {
+-          buttonEl.disabled = false;
++          payload = JSON.parse(raw);
++        } catch (_error) {
++          throw new Error('Search failed: server returned invalid response.');
+         }
++        if (!response.ok) {
++          throw new Error(payload.error || 'Search failed.');
++        }
++        renderResults(payload);
++        return payload;
+       }
+ 
+-      function resetChat() {
+-        promptEl.value = "";
+-        answerEl.textContent = "Your coding answer will appear here.";
+-        statusEl.textContent = "Ready.";
+-      }
++      form.addEventListener('submit', async (event) => {
++        event.preventDefault();
++        try {
++          await runSearch();
++        } catch (error) {
++          meta.textContent = error.message;
++          list.innerHTML = '';
++        }
++      });
+ 
+-      formEl.addEventListener("submit", askCodexLite);
+-      newChatEl.addEventListener("click", resetChat);
+     </script>
+   </body>
+ </html>
+ 
+EOF
+)
