@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Codex-by-Codex</title>
+    <style>
+      :root {
+        --text: #24292f;
+        --muted: #57606a;
+        --border: #d0d7de;
+        --blue: #0969da;
+        --bg: #ffffff;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        color: var(--text);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+        background: var(--bg);
+        line-height: 1.5;
+      }
+
+      .page {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 42px 24px 56px;
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: 58px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: var(--blue);
+      }
+
+      h2 {
+        margin: 28px 0 8px;
+        font-size: 56px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+
+      h3 {
+        margin: 28px 0 8px;
+        font-size: 28px;
+        font-weight: 700;
+      }
+
+      hr {
+        border: 0;
+        border-top: 1px solid var(--border);
+        margin: 12px 0 20px;
+      }
+
+      p, li, code, button, textarea, pre {
+        font-size: 20px;
+      }
+
+      ul, ol { padding-left: 34px; }
+
+      code {
+        font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, monospace;
+        background: rgba(175, 184, 193, 0.2);
+        border-radius: 6px;
+        padding: 2px 6px;
+      }
+
+      .input-label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 160px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 14px;
+        font-family: inherit;
+      }
+
+      .controls {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin-top: 12px;
+      }
+
+      button {
+        border: 1px solid rgba(31, 35, 40, 0.15);
+        border-radius: 8px;
+        padding: 10px 16px;
+        background: #2da44e;
+        color: #fff;
+        cursor: pointer;
+        font-weight: 600;
+      }
+
+      button:disabled {
+        opacity: 0.7;
+        cursor: wait;
+      }
+
+      .hint {
+        color: var(--muted);
+        font-size: 17px;
+      }
+
+      pre {
+        margin-top: 14px;
+        white-space: pre-wrap;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <h1>Codex-by-Codex</h1>
+      <hr />
+
+      <h2>Codex-Lite (smaller assistant, stronger coding quality)</h2>
+      <hr />
+
+      <p><code>mini_codex.py</code> is a compact assistant scaffold tuned specifically for coding tasks.</p>
+
+      <h3>What changed</h3>
+      <hr />
+      <p>Compared with the previous version, this one is much stricter about code quality:</p>
+      <ul>
+        <li>Uses a <strong>plan -&gt; draft -&gt; critique -&gt; final</strong> generation pipeline.</li>
+        <li>Enforces a coding-focused output contract (approach, implementation, verification, risks).</li>
+        <li>Improves reliability by adding an explicit critique pass before final output.</li>
+        <li>Keeps offline mode useful with a structured coding response template.</li>
+      </ul>
+
+      <h3>Why this is closer to “just as good at coding”</h3>
+      <hr />
+      <p>Small models can approach stronger coding quality by using process discipline:</p>
+      <ol>
+        <li>Plan first (requirements + tests + edge cases).</li>
+        <li>Draft full answer.</li>
+        <li>Critique for correctness/omissions.</li>
+        <li>Regenerate a better final answer using that critique.</li>
+      </ol>
+      <p>This script implements exactly that process while staying lightweight.</p>
+
+      <h3>Ask Codex-Lite to code</h3>
+      <hr />
+      <label class="input-label" for="prompt">What should I build?</label>
+      <textarea id="prompt" placeholder="Example: Build a Python CLI todo app with tests"></textarea>
+      <div class="controls">
+        <button id="ask-button">Generate coding answer</button>
+        <span class="hint" id="status">Ready.</span>
+      </div>
+      <pre id="answer">Your generated coding answer will appear here.</pre>
+    </main>
+
+    <script>
+      const promptEl = document.getElementById("prompt");
+      const buttonEl = document.getElementById("ask-button");
+      const statusEl = document.getElementById("status");
+      const answerEl = document.getElementById("answer");
+
+      async function askCodexLite() {
+        const prompt = promptEl.value.trim();
+        if (!prompt) {
+          statusEl.textContent = "Please enter a coding prompt.";
+          return;
+        }
+
+        buttonEl.disabled = true;
+        statusEl.textContent = "Thinking…";
+        answerEl.textContent = "";
+
+        try {
+          const response = await fetch("/api/ask", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ prompt })
+          });
+          const payload = await response.json();
+          if (!response.ok) {
+            throw new Error(payload.error || "Request failed");
+          }
+          answerEl.textContent = payload.answer;
+          statusEl.textContent = "Done.";
+        } catch (error) {
+          statusEl.textContent = "Request failed.";
+          answerEl.textContent = `Error: ${error.message}`;
+        } finally {
+          buttonEl.disabled = false;
+        }
+      }
+
+      buttonEl.addEventListener("click", askCodexLite);
+    </script>
+  </body>
+</html>
